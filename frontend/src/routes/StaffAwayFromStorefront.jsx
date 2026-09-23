@@ -6,7 +6,9 @@ import { isStaffRole } from '../utils/constants';
 function restaurantIdOf(user) {
   const r = user?.restaurant;
   if (!r) return '';
-  return String(r._id || r);
+  if (typeof r === 'string' || typeof r === 'number') return String(r);
+  const id = r._id || r.id;
+  return id ? String(id) : '';
 }
 
 /**
@@ -30,10 +32,16 @@ export default function StaffAwayFromStorefront({ children }) {
   if (isAuthenticated && isStaffRole(user?.role)) {
     const path = location.pathname;
     const ownId = restaurantIdOf(user);
+    const routeId = String(params.id || path.split('/')[2] || '');
     const viewingOwnStore =
       Boolean(ownId) &&
       path.startsWith('/restaurants/') &&
-      String(params.id || path.split('/')[2] || '') === ownId;
+      routeId === ownId;
+
+    // No restaurant linked yet → send partners to setup, not customer home
+    if (!ownId && (path === '/' || path.startsWith('/restaurants'))) {
+      return <Navigate to="/dashboard/restaurant" replace />;
+    }
 
     if (path === '/' || path === '/restaurants' || path.startsWith('/restaurants/')) {
       if (!viewingOwnStore) {

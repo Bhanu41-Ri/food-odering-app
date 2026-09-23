@@ -23,9 +23,14 @@ export default function Login() {
       const user = await login(form);
       toast.success(`Welcome back, ${user?.name?.split(' ')[0] || 'there'}!`);
       const redirect = params.get('redirect');
-      // Staff always land in the partner dashboard window (ignore shopping redirects)
+      // Staff always land in the partner window (ignore shopping redirects)
       if (isStaffRole(user?.role)) {
-        navigate('/dashboard');
+        const hasRestaurant = Boolean(
+          user?.restaurant?._id ||
+            user?.restaurant?.id ||
+            (typeof user?.restaurant === 'string' && user.restaurant)
+        );
+        navigate(hasRestaurant ? '/dashboard' : '/dashboard/restaurant');
       } else if (redirect) {
         navigate(redirect);
       } else {

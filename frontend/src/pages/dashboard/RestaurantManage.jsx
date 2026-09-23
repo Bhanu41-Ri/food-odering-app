@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { ExternalLink } from 'lucide-react';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import Spinner from '../../components/ui/Spinner';
+import { useAuth } from '../../context/AuthContext';
 import { dashboardService } from '../../services/dashboardService';
 import { CUISINES, PRICE_RANGES } from '../../utils/constants';
 import { getErrorMessage } from '../../utils/formatPrice';
@@ -27,10 +30,13 @@ const emptyForm = {
 };
 
 export default function RestaurantManage() {
+  const { refreshUser } = useAuth();
+  const navigate = useNavigate();
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [hasRestaurant, setHasRestaurant] = useState(false);
+  const [restaurantId, setRestaurantId] = useState('');
 
   useEffect(() => {
     dashboardService
@@ -39,9 +45,11 @@ export default function RestaurantManage() {
         const r = data?.restaurant || data;
         if (!r?._id && !r?.id) {
           setHasRestaurant(false);
+          setRestaurantId('');
           return;
         }
         setHasRestaurant(true);
+        setRestaurantId(String(r._id || r.id));
         setForm({
           name: r.name || '',
           description: r.description || '',
@@ -100,12 +108,19 @@ export default function RestaurantManage() {
         isActive: form.isActive,
       };
       if (hasRestaurant) {
-        await dashboardService.updateRestaurant(payload);
+        const saved = await dashboardService.updateRestaurant(payload);
+        const id = String(saved?._id || saved?.id || restaurantId || '');
+        if (id) setRestaurantId(id);
+        await refreshUser();
         toast.success('Restaurant profile saved');
       } else {
-        await dashboardService.createRestaurant(payload);
+        const created = await dashboardService.createRestaurant(payload);
+        const id = String(created?._id || created?.id || '');
         setHasRestaurant(true);
-        toast.success('Restaurant created');
+        if (id) setRestaurantId(id);
+        // Critical: link restaurant onto the auth user so View storefront / RBAC work
+        await refreshUser();
+        toast.success('Restaurant created — you can preview your storefront now');
       }
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -118,16 +133,35 @@ export default function RestaurantManage() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-slate-900">
-          {hasRestaurant ? 'Restaurant profile' : 'Create your restaurant'}
-        </h2>
-        <p className="text-sm text-slate-500">
-          {hasRestaurant
-            ? 'Public details shown to customers'
-            : 'Set up your restaurant to start managing menu and orders'}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900">
+            {hasRestaurant ? 'Restaurant profile' : 'Create your restaurant'}
+          </h2>
+          <p className="text-sm text-slate-500">
+            {hasRestaurant
+              ? 'Public details shown to customers'
+              : 'New partner accounts must create a restaurant before View storefront works'}
+          </p>
+        </div>
+        {hasRestaurant && restaurantId && (
+          <button
+            type="button"
+            className="btn-secondary inline-flex items-center gap-1.5 text-sm"
+            onClick={() => navigate(`/restaurants/${restaurantId}`)}
+          >
+            <ExternalLink className="h-4 w-4" />
+            View storefront
+          </button>
+        )}
       </div>
+      {!hasRestaurant && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          You signed up as a restaurant partner. Save this profile first — then{' '}
+          <span className="font-semibold">View storefront</span> will open your public page at{' '}
+          <code className="rounded bg-white/70 px-1">/restaurants/&lt;id&gt;</code>.
+        </div>
+      )}
 
       <div className="card grid gap-4 p-5 sm:grid-cols-2">
         <Input label="Name" required value={form.name} onChange={(e) => set('name', e.target.value)} />

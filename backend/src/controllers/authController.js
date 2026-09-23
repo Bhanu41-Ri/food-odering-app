@@ -68,6 +68,7 @@ export const login = asyncHandler(async (req, res) => {
   }
 
   const token = generateToken(user._id, user.role);
+  await user.populate('restaurant', 'name image isActive');
 
   res.json({
     success: true,
@@ -75,6 +76,7 @@ export const login = asyncHandler(async (req, res) => {
     data: {
       token,
       user: {
+        _id: user._id,
         id: user._id,
         name: user.name,
         email: user.email,

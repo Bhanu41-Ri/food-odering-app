@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react';
-import { NavLink, Outlet, Link } from 'react-router-dom';
+import { useCallback, useEffect, useState } from 'react';
+import { flushSync } from 'react-dom';
+import { NavLink, Outlet, Link, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import {
   ClipboardList,
   ExternalLink,
@@ -23,20 +25,31 @@ const links = [
 ];
 
 function resolveRestaurantId(user, restaurant) {
-  return String(
-    restaurant?._id ||
-      restaurant?.id ||
-      user?.restaurant?._id ||
-      user?.restaurant ||
-      ''
-  );
+  const candidates = [
+    restaurant?._id,
+    restaurant?.id,
+    user?.restaurant?._id,
+    user?.restaurant?.id,
+    typeof user?.restaurant === 'string' || typeof user?.restaurant === 'number'
+      ? user.restaurant
+      : null,
+  ];
+  const found = candidates.find((v) => v != null && String(v).trim() !== '');
+  const id = found != null ? String(found) : '';
+  // Guard against bad String(object) values
+  if (!id || id === '[object Object]' || id === 'null' || id === 'undefined') {
+    return '';
+  }
+  return id;
 }
 
 export default function DashboardLayout() {
-  const { user } = useAuth();
+  const { user, refreshUser, setUser } = useAuth();
+  const navigate = useNavigate();
   const [restaurantId, setRestaurantId] = useState(() =>
     resolveRestaurantId(user, null)
   );
+  const [openingStorefront, setOpeningStorefront] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -57,9 +70,45 @@ export default function DashboardLayout() {
     };
   }, [user]);
 
-  const storefrontPath = restaurantId
-    ? `/restaurants/${restaurantId}`
-    : '/dashboard/restaurant';
+  const openStorefront = useCallback(
+    async (event) => {
+      event?.preventDefault?.();
+      if (openingStorefront) return;
+      setOpeningStorefront(true);
+      try {
+        let id = restaurantId || resolveRestaurantId(user, null);
+        let restaurant = null;
+        if (!id) {
+          restaurant = await dashboardService.getRestaurant();
+          id = resolveRestaurantId(user, restaurant);
+          if (id) setRestaurantId(id);
+        }
+        if (!id) {
+          toast.error('Create your restaurant profile first, then view the storefront');
+          navigate('/dashboard/restaurant');
+          return;
+        }
+        // Keep auth user in sync BEFORE navigate so StaffAwayFromStorefront
+        // allows this preview (important right after first restaurant create)
+        if (user && resolveRestaurantId(user, null) !== id) {
+          flushSync(() => {
+            setUser({
+              ...user,
+              restaurant: restaurant?._id || restaurant?.id ? restaurant : { _id: id, id },
+            });
+          });
+          refreshUser().catch(() => {});
+        }
+        navigate(`/restaurants/${id}`);
+      } catch {
+        toast.error('Could not open storefront. Set up your restaurant first.');
+        navigate('/dashboard/restaurant');
+      } finally {
+        setOpeningStorefront(false);
+      }
+    },
+    [openingStorefront, restaurantId, user, navigate, refreshUser, setUser]
+  );
 
   const linkClass = ({ isActive }) =>
     `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
@@ -93,27 +142,32 @@ export default function DashboardLayout() {
         <div className="hidden border-t border-slate-100 p-4 lg:block">
           <p className="truncate text-sm font-medium text-slate-800">{user?.name}</p>
           <p className="truncate text-xs text-slate-500">{user?.email}</p>
-          <Link
-            to={storefrontPath}
-            className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-brand-600"
+          <button
+            type="button"
+            onClick={openStorefront}
+            disabled={openingStorefront}
+            className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-brand-600 disabled:opacity-60"
           >
-            <ExternalLink className="h-3.5 w-3.5" /> View storefront
-          </Link>
+            <ExternalLink className="h-3.5 w-3.5" />
+            {openingStorefront ? 'Opening…' : 'View storefront'}
+          </button>
         </div>
       </aside>
       <div className="min-w-0">
         <header className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-slate-100 bg-white/90 px-4 py-4 backdrop-blur sm:px-6">
           <h1 className="text-lg font-semibold text-slate-900">Dashboard</h1>
-          <Link
-            to={storefrontPath}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
+          <button
+            type="button"
+            onClick={openStorefront}
+            disabled={openingStorefront}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700 disabled:opacity-60"
           >
             <ExternalLink className="h-3.5 w-3.5" />
-            View storefront
-          </Link>
+            {openingStorefront ? 'Opening…' : 'View storefront'}
+          </button>
         </header>
         <div className="p-4 sm:p-6">
-          <Outlet />
+          <Outlet context={{ restaurantId, openStorefront }} />
         </div>
       </div>
     </div>

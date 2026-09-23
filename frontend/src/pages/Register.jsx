@@ -37,9 +37,9 @@ export default function Register() {
       const { confirmPassword, ...payload } = form;
       const user = await register(payload);
       toast.success('Account created!');
-      // Use server role so landing matches permissions (partner → dashboard only)
+      // Partners land on restaurant setup first (no storefront until a restaurant exists)
       if (isStaffRole(user?.role)) {
-        navigate('/dashboard');
+        navigate('/dashboard/restaurant');
       } else {
         navigate('/');
       }
