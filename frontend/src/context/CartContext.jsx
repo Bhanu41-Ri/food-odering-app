@@ -10,6 +10,7 @@ import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { cartService } from '../services/cartService';
 import { getErrorMessage } from '../utils/formatPrice';
+import { isCustomerRole } from '../utils/constants';
 import { useAuth } from './AuthContext';
 
 const CartContext = createContext(null);
@@ -17,11 +18,12 @@ const CartContext = createContext(null);
 const emptyCart = { items: [], restaurant: null, subtotal: 0 };
 
 export function CartProvider({ children }) {
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [cart, setCart] = useState(emptyCart);
   const [loading, setLoading] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const canShop = isAuthenticated && isCustomerRole(user?.role);
 
   const normalize = (data) => {
     if (!data) return emptyCart;
@@ -44,7 +46,7 @@ export function CartProvider({ children }) {
   };
 
   const fetchCart = useCallback(async () => {
-    if (!isAuthenticated) {
+    if (!canShop) {
       setCart(emptyCart);
       return;
     }
@@ -57,7 +59,7 @@ export function CartProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [canShop]);
 
   useEffect(() => {
     if (!authLoading) fetchCart();
@@ -67,6 +69,11 @@ export function CartProvider({ children }) {
     if (!isAuthenticated) {
       toast.error('Please log in to add items to your cart');
       navigate('/login?redirect=' + encodeURIComponent(window.location.pathname));
+      return false;
+    }
+    if (!isCustomerRole(user?.role)) {
+      toast.error('Restaurant partners manage orders from the dashboard — ordering is for customers only');
+      navigate('/dashboard');
       return false;
     }
     return true;

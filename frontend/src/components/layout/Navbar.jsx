@@ -18,7 +18,8 @@ import {
   CUISINES,
   CUISINE_DISHES,
   QUICK_DISHES,
-  ROLES,
+  isCustomerRole,
+  isStaffRole,
 } from '../../utils/constants';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
@@ -30,6 +31,8 @@ import MobileMenu from './MobileMenu';
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
   const { itemCount, setDrawerOpen } = useCart();
+  const isCustomer = isAuthenticated && isCustomerRole(user?.role);
+  const isStaff = isAuthenticated && isStaffRole(user?.role);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
@@ -155,7 +158,10 @@ export default function Navbar() {
     <>
       <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 shadow-sm backdrop-blur-md">
         <div className="container-app flex h-[4.25rem] items-center gap-3 sm:gap-4">
-          <Link to="/" className="group flex shrink-0 items-center gap-2.5">
+          <Link
+            to={isStaff ? '/dashboard' : '/'}
+            className="group flex shrink-0 items-center gap-2.5"
+          >
             <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-sm font-bold text-white shadow-md shadow-brand-600/30 transition group-hover:scale-105">
               FD
             </span>
@@ -164,6 +170,7 @@ export default function Navbar() {
             </span>
           </Link>
 
+          {!isStaff && (
           <form
             onSubmit={onSearch}
             className="relative mx-auto hidden max-w-md flex-1 md:block"
@@ -293,19 +300,36 @@ export default function Navbar() {
               </div>
             )}
           </form>
+          )}
 
           <nav className="ml-auto hidden items-center gap-1 lg:flex">
-            <NavLink to="/restaurants" className={navLink}>
-              Restaurants
-            </NavLink>
-            {isAuthenticated && (
+            {isStaff ? (
               <>
-                <NavLink to="/orders" className={navLink}>
-                  Orders
+                <NavLink to="/dashboard" className={navLink}>
+                  Dashboard
                 </NavLink>
-                <NavLink to="/favorites" className={navLink}>
-                  Favorites
+                <NavLink to="/dashboard/orders" className={navLink}>
+                  Incoming orders
                 </NavLink>
+                <NavLink to="/dashboard/menu" className={navLink}>
+                  Menu
+                </NavLink>
+              </>
+            ) : (
+              <>
+                <NavLink to="/restaurants" className={navLink}>
+                  Restaurants
+                </NavLink>
+                {isCustomer && (
+                  <>
+                    <NavLink to="/orders" className={navLink}>
+                      Orders
+                    </NavLink>
+                    <NavLink to="/favorites" className={navLink}>
+                      Favorites
+                    </NavLink>
+                  </>
+                )}
               </>
             )}
           </nav>
@@ -313,19 +337,21 @@ export default function Navbar() {
           <div className="ml-auto flex items-center gap-1.5 sm:gap-2 lg:ml-2">
             {isAuthenticated && <NotificationDropdown />}
 
-            <button
-              type="button"
-              onClick={() => setDrawerOpen(true)}
-              className="relative rounded-xl border border-transparent p-2.5 text-slate-600 transition hover:border-slate-200 hover:bg-slate-50"
-              aria-label="Open cart"
-            >
-              <ShoppingBag className="h-5 w-5" />
-              {itemCount > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-600 px-1 text-[10px] font-bold text-white shadow">
-                  {itemCount}
-                </span>
-              )}
-            </button>
+            {isCustomer && (
+              <button
+                type="button"
+                onClick={() => setDrawerOpen(true)}
+                className="relative rounded-xl border border-transparent p-2.5 text-slate-600 transition hover:border-slate-200 hover:bg-slate-50"
+                aria-label="Open cart"
+              >
+                <ShoppingBag className="h-5 w-5" />
+                {itemCount > 0 && (
+                  <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-600 px-1 text-[10px] font-bold text-white shadow">
+                    {itemCount}
+                  </span>
+                )}
+              </button>
+            )}
 
             {isAuthenticated ? (
               <div className="relative hidden sm:block group">
@@ -345,25 +371,29 @@ export default function Navbar() {
                   >
                     <User className="h-4 w-4 text-slate-400" /> Profile
                   </Link>
-                  <Link
-                    to="/orders"
-                    className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
-                  >
-                    <Package className="h-4 w-4 text-slate-400" /> Orders
-                  </Link>
-                  <Link
-                    to="/payments"
-                    className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
-                  >
-                    <CreditCard className="h-4 w-4 text-slate-400" /> Payments
-                  </Link>
-                  <Link
-                    to="/favorites"
-                    className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
-                  >
-                    <Heart className="h-4 w-4 text-slate-400" /> Favorites
-                  </Link>
-                  {(user?.role === ROLES.RESTAURANT_ADMIN || user?.role === ROLES.ADMIN) && (
+                  {isCustomer && (
+                    <>
+                      <Link
+                        to="/orders"
+                        className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
+                      >
+                        <Package className="h-4 w-4 text-slate-400" /> Orders
+                      </Link>
+                      <Link
+                        to="/payments"
+                        className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
+                      >
+                        <CreditCard className="h-4 w-4 text-slate-400" /> Payments
+                      </Link>
+                      <Link
+                        to="/favorites"
+                        className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
+                      >
+                        <Heart className="h-4 w-4 text-slate-400" /> Favorites
+                      </Link>
+                    </>
+                  )}
+                  {isStaff && (
                     <Link
                       to="/dashboard"
                       className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50"

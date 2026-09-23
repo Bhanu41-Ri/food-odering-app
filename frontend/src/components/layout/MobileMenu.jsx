@@ -8,13 +8,16 @@ import {
   Package,
   Store,
   User,
+  UtensilsCrossed,
   X,
 } from 'lucide-react';
-import { APP_NAME, ROLES } from '../../utils/constants';
+import { APP_NAME, isCustomerRole, isStaffRole } from '../../utils/constants';
 import { useAuth } from '../../context/AuthContext';
 
 export default function MobileMenu({ open, onClose }) {
   const { user, isAuthenticated, logout } = useAuth();
+  const isCustomer = isAuthenticated && isCustomerRole(user?.role);
+  const isStaff = isAuthenticated && isStaffRole(user?.role);
 
   if (!open) return null;
 
@@ -33,7 +36,11 @@ export default function MobileMenu({ open, onClose }) {
       />
       <div className="absolute inset-y-0 right-0 flex w-[min(100%,20rem)] flex-col bg-white shadow-xl">
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-4">
-          <Link to="/" onClick={onClose} className="text-lg font-bold text-brand-600">
+          <Link
+            to={isStaff ? '/dashboard' : '/'}
+            onClick={onClose}
+            className="text-lg font-bold text-brand-600"
+          >
             {APP_NAME}
           </Link>
           <button type="button" onClick={onClose} className="rounded-lg p-2 hover:bg-slate-100">
@@ -41,29 +48,51 @@ export default function MobileMenu({ open, onClose }) {
           </button>
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-          <NavLink to="/" end className={linkClass} onClick={onClose}>
-            <Home className="h-4 w-4" /> Home
-          </NavLink>
-          <NavLink to="/restaurants" className={linkClass} onClick={onClose}>
-            <Store className="h-4 w-4" /> Restaurants
-          </NavLink>
-          {isAuthenticated && (
+          {isStaff ? (
             <>
-              <NavLink to="/orders" className={linkClass} onClick={onClose}>
-                <Package className="h-4 w-4" /> Orders
+              <NavLink to="/dashboard" end className={linkClass} onClick={onClose}>
+                <LayoutDashboard className="h-4 w-4" /> Dashboard
               </NavLink>
-              <NavLink to="/favorites" className={linkClass} onClick={onClose}>
-                <Heart className="h-4 w-4" /> Favorites
+              <NavLink to="/dashboard/orders" className={linkClass} onClick={onClose}>
+                <Package className="h-4 w-4" /> Incoming orders
               </NavLink>
-              <NavLink to="/payments" className={linkClass} onClick={onClose}>
-                <CreditCard className="h-4 w-4" /> Payments
+              <NavLink to="/dashboard/menu" className={linkClass} onClick={onClose}>
+                <UtensilsCrossed className="h-4 w-4" /> Menu
+              </NavLink>
+              <NavLink to="/dashboard/restaurant" className={linkClass} onClick={onClose}>
+                <Store className="h-4 w-4" /> Restaurant
               </NavLink>
               <NavLink to="/profile" className={linkClass} onClick={onClose}>
                 <User className="h-4 w-4" /> Profile
               </NavLink>
-              {(user?.role === ROLES.RESTAURANT_ADMIN || user?.role === ROLES.ADMIN) && (
-                <NavLink to="/dashboard" className={linkClass} onClick={onClose}>
-                  <LayoutDashboard className="h-4 w-4" /> Dashboard
+            </>
+          ) : (
+            <>
+              <NavLink to="/" end className={linkClass} onClick={onClose}>
+                <Home className="h-4 w-4" /> Home
+              </NavLink>
+              <NavLink to="/restaurants" className={linkClass} onClick={onClose}>
+                <Store className="h-4 w-4" /> Restaurants
+              </NavLink>
+              {isCustomer && (
+                <>
+                  <NavLink to="/orders" className={linkClass} onClick={onClose}>
+                    <Package className="h-4 w-4" /> Orders
+                  </NavLink>
+                  <NavLink to="/favorites" className={linkClass} onClick={onClose}>
+                    <Heart className="h-4 w-4" /> Favorites
+                  </NavLink>
+                  <NavLink to="/payments" className={linkClass} onClick={onClose}>
+                    <CreditCard className="h-4 w-4" /> Payments
+                  </NavLink>
+                  <NavLink to="/profile" className={linkClass} onClick={onClose}>
+                    <User className="h-4 w-4" /> Profile
+                  </NavLink>
+                </>
+              )}
+              {isAuthenticated && !isCustomer && (
+                <NavLink to="/profile" className={linkClass} onClick={onClose}>
+                  <User className="h-4 w-4" /> Profile
                 </NavLink>
               )}
             </>

@@ -4,6 +4,8 @@ import AuthLayout from '../layouts/AuthLayout';
 import DashboardLayout from '../layouts/DashboardLayout';
 import ProtectedRoute from './ProtectedRoute';
 import RoleRoute from './RoleRoute';
+import CustomerRoute from './CustomerRoute';
+import StaffAwayFromStorefront from './StaffAwayFromStorefront';
 import { AuthProvider } from '../context/AuthContext';
 import { CartProvider } from '../context/CartContext';
 import { SocketProvider } from '../context/SocketContext';
@@ -50,71 +52,92 @@ export default function AppRouter() {
       <Providers>
         <Routes>
           <Route element={<MainLayout />}>
-            <Route index element={<Home />} />
-            <Route path="restaurants" element={<Restaurants />} />
-            <Route path="restaurants/:id" element={<RestaurantDetails />} />
+            <Route
+              index
+              element={
+                <StaffAwayFromStorefront>
+                  <Home />
+                </StaffAwayFromStorefront>
+              }
+            />
+            <Route
+              path="restaurants"
+              element={
+                <StaffAwayFromStorefront>
+                  <Restaurants />
+                </StaffAwayFromStorefront>
+              }
+            />
+            <Route
+              path="restaurants/:id"
+              element={
+                <StaffAwayFromStorefront>
+                  <RestaurantDetails />
+                </StaffAwayFromStorefront>
+              }
+            />
             <Route
               path="cart"
               element={
-                <ProtectedRoute>
+                <CustomerRoute>
                   <Cart />
-                </ProtectedRoute>
+                </CustomerRoute>
               }
             />
             <Route
               path="checkout"
               element={
-                <ProtectedRoute>
+                <CustomerRoute>
                   <Checkout />
-                </ProtectedRoute>
+                </CustomerRoute>
               }
             />
             <Route
               path="payment/success"
               element={
-                <ProtectedRoute>
+                <CustomerRoute>
                   <PaymentSuccess />
-                </ProtectedRoute>
+                </CustomerRoute>
               }
             />
             <Route
               path="payment-success"
               element={
-                <ProtectedRoute>
+                <CustomerRoute>
                   <PaymentSuccess />
-                </ProtectedRoute>
+                </CustomerRoute>
               }
             />
             <Route
               path="payment/pending"
               element={
-                <ProtectedRoute>
+                <CustomerRoute>
                   <PaymentPending />
-                </ProtectedRoute>
+                </CustomerRoute>
               }
             />
             <Route
               path="payment-pending"
               element={
-                <ProtectedRoute>
+                <CustomerRoute>
                   <PaymentPending />
-                </ProtectedRoute>
+                </CustomerRoute>
               }
             />
             <Route
               path="payment/failed"
               element={
-                <ProtectedRoute>
+                <CustomerRoute>
                   <PaymentFailed />
-                </ProtectedRoute>
+                </CustomerRoute>
               }
             />
             <Route
               path="payment-failed"
               element={
-                <ProtectedRoute>
+                <CustomerRoute>
                   <PaymentFailed />
-                </ProtectedRoute>
+                </CustomerRoute>
               }
             />
             <Route
@@ -128,25 +151,25 @@ export default function AppRouter() {
             <Route
               path="orders"
               element={
-                <ProtectedRoute>
+                <CustomerRoute>
                   <Orders />
-                </ProtectedRoute>
+                </CustomerRoute>
               }
             />
             <Route
               path="orders/:id"
               element={
-                <ProtectedRoute>
+                <CustomerRoute>
                   <OrderDetails />
-                </ProtectedRoute>
+                </CustomerRoute>
               }
             />
             <Route
               path="favorites"
               element={
-                <ProtectedRoute>
+                <CustomerRoute>
                   <Favorites />
-                </ProtectedRoute>
+                </CustomerRoute>
               }
             />
             <Route
@@ -160,9 +183,9 @@ export default function AppRouter() {
             <Route
               path="payments"
               element={
-                <ProtectedRoute>
+                <CustomerRoute>
                   <PaymentHistory />
-                </ProtectedRoute>
+                </CustomerRoute>
               }
             />
           </Route>

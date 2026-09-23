@@ -6,6 +6,12 @@ export const ROLES = {
   ADMIN: 'admin',
 };
 
+/** Restaurant partners + platform admins (non-customer staff). */
+export const STAFF_ROLES = [ROLES.RESTAURANT_ADMIN, ROLES.ADMIN];
+
+export const isStaffRole = (role) => STAFF_ROLES.includes(role);
+export const isCustomerRole = (role) => role === ROLES.CUSTOMER;
+
 export const ORDER_STATUSES = [
   { key: 'pending', label: 'Placed' },
   { key: 'confirmed', label: 'Confirmed' },

@@ -19,8 +19,14 @@ const router = Router();
 
 router.use(protect);
 
-router.post('/', createOrderValidators, validate, createOrder);
-router.get('/mine', listMyOrders);
+router.post(
+  '/',
+  authorize('customer'),
+  createOrderValidators,
+  validate,
+  createOrder
+);
+router.get('/mine', authorize('customer'), listMyOrders);
 router.get(
   '/restaurant/stats',
   authorize('restaurant_admin', 'admin'),
@@ -40,6 +46,12 @@ router.patch(
   validate,
   changeOrderStatus
 );
-router.patch('/:id/cancel', idParam, validate, cancelMyOrder);
+router.patch(
+  '/:id/cancel',
+  authorize('customer'),
+  idParam,
+  validate,
+  cancelMyOrder
+);
 
 export default router;

@@ -1,8 +1,25 @@
 import { Link } from 'react-router-dom';
 import { Globe, Mail, MapPin, Phone, Share2 } from 'lucide-react';
-import { APP_NAME } from '../../utils/constants';
+import { APP_NAME, isStaffRole } from '../../utils/constants';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Footer() {
+  const { user, isAuthenticated } = useAuth();
+  const isStaff = isAuthenticated && isStaffRole(user?.role);
+  const exploreLinks = isStaff
+    ? [
+        { to: '/dashboard', label: 'Partner dashboard' },
+        { to: '/dashboard/orders', label: 'Incoming orders' },
+        { to: '/dashboard/menu', label: 'Menu' },
+        { to: '/dashboard/restaurant', label: 'Restaurant profile' },
+      ]
+    : [
+        { to: '/restaurants', label: 'Restaurants' },
+        { to: '/favorites', label: 'Favorites' },
+        { to: '/orders', label: 'Your orders' },
+        { to: '/payments', label: 'Payments' },
+      ];
+
   return (
     <footer className="mt-auto relative overflow-hidden border-t border-slate-800 bg-slate-950 text-slate-300">
       <div className="pointer-events-none absolute -left-20 top-0 h-56 w-56 rounded-full bg-brand-600/20 blur-3xl" />
@@ -33,12 +50,7 @@ export default function Footer() {
         <div>
           <h4 className="text-sm font-semibold uppercase tracking-wider text-white">Explore</h4>
           <ul className="mt-4 space-y-2.5 text-sm">
-            {[
-              { to: '/restaurants', label: 'Restaurants' },
-              { to: '/favorites', label: 'Favorites' },
-              { to: '/orders', label: 'Your orders' },
-              { to: '/payments', label: 'Payments' },
-            ].map((item) => (
+            {exploreLinks.map((item) => (
               <li key={item.to}>
                 <Link
                   to={item.to}

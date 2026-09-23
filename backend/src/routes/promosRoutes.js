@@ -13,7 +13,14 @@ import validate from '../middleware/validate.js';
 const router = Router();
 
 router.get('/', listActivePromos);
-router.post('/validate', protect, validatePromoValidators, validate, validatePromo);
+router.post(
+  '/validate',
+  protect,
+  authorize('customer'),
+  validatePromoValidators,
+  validate,
+  validatePromo
+);
 router.post(
   '/',
   protect,

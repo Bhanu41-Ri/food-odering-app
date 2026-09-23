@@ -15,6 +15,7 @@ import {
   idParam,
 } from '../controllers/paymentsController.js';
 import { protect } from '../middleware/auth.js';
+import authorize from '../middleware/authorize.js';
 import validate from '../middleware/validate.js';
 import { body } from 'express-validator';
 
@@ -23,6 +24,7 @@ const router = Router();
 router.get('/config', getConfig);
 
 router.use(protect);
+router.use(authorize('customer'));
 
 router.post('/create-intent', createIntentValidators, validate, createIntent);
 router.post(

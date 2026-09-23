@@ -1,11 +1,11 @@
 import { Navigate } from 'react-router-dom';
 import Spinner from '../components/ui/Spinner';
 import { useAuth } from '../context/AuthContext';
-import { ROLES } from '../utils/constants';
+import { STAFF_ROLES } from '../utils/constants';
 
 export default function RoleRoute({
   children,
-  roles = [ROLES.RESTAURANT_ADMIN, ROLES.ADMIN],
+  roles = STAFF_ROLES,
 }) {
   const { user, isAuthenticated, loading } = useAuth();
 

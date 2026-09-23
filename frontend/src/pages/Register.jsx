@@ -5,6 +5,7 @@ import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
 import { getErrorMessage } from '../utils/formatPrice';
+import { isStaffRole } from '../utils/constants';
 
 export default function Register() {
   const { register } = useAuth();
@@ -36,8 +37,8 @@ export default function Register() {
       const { confirmPassword, ...payload } = form;
       const user = await register(payload);
       toast.success('Account created!');
-      // Use server role (not form value) so redirect matches actual permissions
-      if (user?.role === 'restaurant_admin' || user?.role === 'admin') {
+      // Use server role so landing matches permissions (partner → dashboard only)
+      if (isStaffRole(user?.role)) {
         navigate('/dashboard');
       } else {
         navigate('/');

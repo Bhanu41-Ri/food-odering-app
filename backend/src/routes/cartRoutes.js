@@ -9,12 +9,14 @@ import {
   itemIdParam,
 } from '../controllers/cartController.js';
 import { protect } from '../middleware/auth.js';
+import authorize from '../middleware/authorize.js';
 import validate from '../middleware/validate.js';
 import { body } from 'express-validator';
 
 const router = Router();
 
 router.use(protect);
+router.use(authorize('customer'));
 
 router.get('/', getCart);
 router.post('/items', addValidators, validate, addToCart);

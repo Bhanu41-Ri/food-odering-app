@@ -5,7 +5,7 @@ import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
 import { getErrorMessage } from '../utils/formatPrice';
-import { ROLES } from '../utils/constants';
+import { isStaffRole } from '../utils/constants';
 
 export default function Login() {
   const { login } = useAuth();
@@ -23,10 +23,11 @@ export default function Login() {
       const user = await login(form);
       toast.success(`Welcome back, ${user?.name?.split(' ')[0] || 'there'}!`);
       const redirect = params.get('redirect');
-      if (redirect) {
-        navigate(redirect);
-      } else if (user?.role === ROLES.RESTAURANT_ADMIN || user?.role === ROLES.ADMIN) {
+      // Staff always land in the partner dashboard window (ignore shopping redirects)
+      if (isStaffRole(user?.role)) {
         navigate('/dashboard');
+      } else if (redirect) {
+        navigate(redirect);
       } else {
         navigate('/');
       }
