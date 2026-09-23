@@ -1,13 +1,24 @@
 import { useEffect, useState } from 'react';
-import { ClipboardList, DollarSign, Star, UtensilsCrossed } from 'lucide-react';
+import {
+  ClipboardList,
+  DollarSign,
+  ExternalLink,
+  Star,
+  UtensilsCrossed,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Spinner from '../../components/ui/Spinner';
+import { useAuth } from '../../context/AuthContext';
 import { dashboardService } from '../../services/dashboardService';
 import { formatPrice } from '../../utils/formatPrice';
 
 export default function DashboardHome() {
+  const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [restaurantId, setRestaurantId] = useState(
+    String(user?.restaurant?._id || user?.restaurant || '')
+  );
 
   useEffect(() => {
     dashboardService
@@ -15,7 +26,15 @@ export default function DashboardHome() {
       .then((data) => setStats(data?.stats || data))
       .catch(() => setStats({}))
       .finally(() => setLoading(false));
-  }, []);
+
+    dashboardService
+      .getRestaurant()
+      .then((data) => {
+        const id = String(data?._id || data?.id || user?.restaurant?._id || user?.restaurant || '');
+        if (id) setRestaurantId(id);
+      })
+      .catch(() => {});
+  }, [user]);
 
   if (loading) return <Spinner />;
 
@@ -69,14 +88,25 @@ export default function DashboardHome() {
         ))}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {[
           { to: '/dashboard/orders', title: 'Manage orders', desc: 'Update status in real time' },
           { to: '/dashboard/menu', title: 'Edit menu', desc: 'Categories, prices, availability' },
           { to: '/dashboard/reviews', title: 'Respond to reviews', desc: 'Moderate and reply' },
+          {
+            to: restaurantId ? `/restaurants/${restaurantId}` : '/dashboard/restaurant',
+            title: 'View storefront',
+            desc: restaurantId
+              ? 'See your restaurant page as customers do'
+              : 'Create your restaurant first',
+            icon: true,
+          },
         ].map((item) => (
-          <Link key={item.to} to={item.to} className="card card-hover p-5">
-            <h3 className="font-semibold text-slate-900">{item.title}</h3>
+          <Link key={item.to + item.title} to={item.to} className="card card-hover p-5">
+            <h3 className="inline-flex items-center gap-2 font-semibold text-slate-900">
+              {item.title}
+              {item.icon && <ExternalLink className="h-4 w-4 text-brand-600" />}
+            </h3>
             <p className="mt-1 text-sm text-slate-500">{item.desc}</p>
           </Link>
         ))}

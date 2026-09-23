@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Clock, Heart, MapPin, Star } from 'lucide-react';
+import { Clock, Heart, LayoutDashboard, MapPin, Star } from 'lucide-react';
 import toast from 'react-hot-toast';
 import CategoryTabs from '../components/menu/CategoryTabs';
 import MenuItemCard from '../components/menu/MenuItemCard';
@@ -14,13 +14,17 @@ import { useAuth } from '../context/AuthContext';
 import { restaurantService } from '../services/restaurantService';
 import { favoriteService } from '../services/favoriteService';
 import { reviewService } from '../services/reviewService';
-import { PLACEHOLDER_RESTAURANT } from '../utils/constants';
+import { isStaffRole, PLACEHOLDER_RESTAURANT } from '../utils/constants';
 import { formatPrice, getErrorMessage } from '../utils/formatPrice';
 
 export default function RestaurantDetails() {
   const { id } = useParams();
   const { addItem } = useCart();
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+  const isStaff = isAuthenticated && isStaffRole(user?.role);
+  const ownRestaurantId = String(user?.restaurant?._id || user?.restaurant || '');
+  const isOwnerPreview =
+    isStaff && Boolean(ownRestaurantId) && String(id) === ownRestaurantId;
   const [restaurant, setRestaurant] = useState(null);
   const [categories, setCategories] = useState([]);
   const [items, setItems] = useState([]);
@@ -64,7 +68,7 @@ export default function RestaurantDetails() {
   }, [id]);
 
   useEffect(() => {
-    if (!isAuthenticated || !id) return;
+    if (!isAuthenticated || !id || isStaff) return;
     favoriteService
       .get()
       .then((data) => {
@@ -75,7 +79,7 @@ export default function RestaurantDetails() {
         );
       })
       .catch(() => {});
-  }, [isAuthenticated, id]);
+  }, [isAuthenticated, id, isStaff]);
 
   const filteredItems = useMemo(() => {
     if (!activeCategory) return items;
@@ -150,6 +154,24 @@ export default function RestaurantDetails() {
 
   return (
     <div>
+      {isOwnerPreview && (
+        <div className="border-b border-indigo-100 bg-indigo-50">
+          <div className="container-app flex flex-wrap items-center justify-between gap-3 py-3 text-sm text-indigo-900">
+            <p>
+              <span className="font-semibold">Storefront preview</span>
+              {' — '}
+              this is how customers see your restaurant. Ordering is disabled for partner accounts.
+            </p>
+            <Link
+              to="/dashboard"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-1.5 text-xs font-semibold text-indigo-800 shadow-sm"
+            >
+              <LayoutDashboard className="h-3.5 w-3.5" />
+              Back to dashboard
+            </Link>
+          </div>
+        </div>
+      )}
       <div className="relative h-56 sm:h-72 lg:h-80">
         <img
           src={restaurant.image || PLACEHOLDER_RESTAURANT}
@@ -181,16 +203,18 @@ export default function RestaurantDetails() {
                 <span>Delivery {formatPrice(restaurant.deliveryFee ?? 2.99)}</span>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={toggleFavorite}
-              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold ${
-                favorited ? 'bg-rose-500 text-white' : 'bg-white text-slate-800'
-              }`}
-            >
-              <Heart className={`h-4 w-4 ${favorited ? 'fill-current' : ''}`} />
-              {favorited ? 'Saved' : 'Favorite'}
-            </button>
+            {!isStaff && (
+              <button
+                type="button"
+                onClick={toggleFavorite}
+                className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold ${
+                  favorited ? 'bg-rose-500 text-white' : 'bg-white text-slate-800'
+                }`}
+              >
+                <Heart className={`h-4 w-4 ${favorited ? 'fill-current' : ''}`} />
+                {favorited ? 'Saved' : 'Favorite'}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -210,9 +234,10 @@ export default function RestaurantDetails() {
                 <MenuItemCard
                   key={item._id}
                   item={item}
-                  onCustomize={(it) => setCustomizeItem(it)}
+                  previewMode={isStaff}
+                  onCustomize={isStaff ? undefined : (it) => setCustomizeItem(it)}
                   favorited={favoriteFoodIds.includes(String(item._id))}
-                  onToggleFavorite={toggleFoodFavorite}
+                  onToggleFavorite={isStaff ? undefined : toggleFoodFavorite}
                 />
               ))
             ) : (

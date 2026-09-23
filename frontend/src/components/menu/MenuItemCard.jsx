@@ -8,6 +8,7 @@ export default function MenuItemCard({
   onCustomize,
   favorited = false,
   onToggleFavorite,
+  previewMode = false,
 }) {
   const imageSrc = getDishImage(item.name, item.image);
 
@@ -48,31 +49,36 @@ export default function MenuItemCard({
             </p>
           )}
         <p className="text-base font-semibold text-brand-700">{formatPrice(item.price)}</p>
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            disabled={!item.isAvailable}
-            onClick={() => onCustomize?.(item)}
-            className="btn-primary mt-1"
-          >
-            <Plus className="h-4 w-4" /> Add
-          </button>
-          {onToggleFavorite && (
+        {!previewMode && (
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={() => onToggleFavorite(item)}
-              className={`mt-1 inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-semibold transition ${
-                favorited
-                  ? 'border-rose-200 bg-rose-50 text-rose-600'
-                  : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-              }`}
-              aria-label={favorited ? 'Remove from favorites' : 'Save dish'}
+              disabled={!item.isAvailable}
+              onClick={() => onCustomize?.(item)}
+              className="btn-primary mt-1"
             >
-              <Heart className={`h-4 w-4 ${favorited ? 'fill-current' : ''}`} />
-              {favorited ? 'Saved' : 'Save'}
+              <Plus className="h-4 w-4" /> Add
             </button>
-          )}
-        </div>
+            {onToggleFavorite && (
+              <button
+                type="button"
+                onClick={() => onToggleFavorite(item)}
+                className={`mt-1 inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-semibold transition ${
+                  favorited
+                    ? 'border-rose-200 bg-rose-50 text-rose-600'
+                    : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+                aria-label={favorited ? 'Remove from favorites' : 'Save dish'}
+              >
+                <Heart className={`h-4 w-4 ${favorited ? 'fill-current' : ''}`} />
+                {favorited ? 'Saved' : 'Save'}
+              </button>
+            )}
+          </div>
+        )}
+        {previewMode && (
+          <p className="mt-1 text-xs font-medium text-slate-400">Preview only</p>
+        )}
       </div>
       <div className="h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-slate-100 sm:h-28 sm:w-28">
         <img
