@@ -46,6 +46,11 @@ export default function PaymentSuccess() {
   }
 
   if (status === 'error') {
+    const failedQs = new URLSearchParams({
+      reason: 'stripe',
+      message: error || 'Could not confirm Stripe payment',
+    });
+    if (orderId) failedQs.set('orderId', orderId);
     return (
       <div className="container-app flex min-h-[60vh] items-center justify-center py-16">
         <div className="card max-w-lg w-full p-8 text-center">
@@ -55,12 +60,15 @@ export default function PaymentSuccess() {
           <h1 className="text-2xl font-bold text-slate-900">Payment confirmation issue</h1>
           <p className="mt-2 text-sm text-slate-500">{error}</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <Link to={`/payment/failed?${failedQs.toString()}`} className="btn-primary">
+              See failure details
+            </Link>
             {orderId && (
-              <Link to={`/orders/${orderId}`} className="btn-primary">
+              <Link to={`/orders/${orderId}`} className="btn-secondary">
                 View order
               </Link>
             )}
-            <Link to="/checkout" className="btn-secondary">
+            <Link to="/checkout" className="btn-ghost">
               Back to checkout
             </Link>
           </div>

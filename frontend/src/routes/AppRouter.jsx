@@ -18,6 +18,7 @@ import Cart from '../pages/Cart';
 import Checkout from '../pages/Checkout';
 import PaymentSuccess from '../pages/PaymentSuccess';
 import PaymentFailed from '../pages/PaymentFailed';
+import PaymentPending from '../pages/PaymentPending';
 import Profile from '../pages/Profile';
 import Orders from '../pages/Orders';
 import OrderDetails from '../pages/OrderDetails';
@@ -81,6 +82,22 @@ export default function AppRouter() {
               element={
                 <ProtectedRoute>
                   <PaymentSuccess />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="payment/pending"
+              element={
+                <ProtectedRoute>
+                  <PaymentPending />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="payment-pending"
+              element={
+                <ProtectedRoute>
+                  <PaymentPending />
                 </ProtectedRoute>
               }
             />

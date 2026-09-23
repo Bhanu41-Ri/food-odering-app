@@ -25,6 +25,10 @@ export const createIntentValidators = [
 
 export const createCheckoutValidators = [
   body('orderId').isMongoId().withMessage('Valid order id is required'),
+  body('returnOrigin')
+    .optional()
+    .isURL({ require_tld: false })
+    .withMessage('returnOrigin must be a valid URL'),
 ];
 
 export const codValidators = [
@@ -277,10 +281,19 @@ export const createCheckout = asyncHandler(async (req, res) => {
     customerId = undefined;
   }
 
-  const clientUrl = (process.env.CLIENT_URL || 'http://localhost:5173').replace(
-    /\/$/,
-    ''
-  );
+  // CLIENT_URL may be a comma-separated CORS allowlist. Prefer the browser origin
+  // the customer is on so Stripe return URLs keep the same localStorage/auth host.
+  const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
+    .split(',')
+    .map((o) => o.trim().replace(/\/$/, ''))
+    .filter(Boolean);
+  const requestedOrigin = String(req.body.returnOrigin || '')
+    .trim()
+    .replace(/\/$/, '');
+  const clientUrl =
+    (requestedOrigin && allowedOrigins.includes(requestedOrigin)
+      ? requestedOrigin
+      : allowedOrigins[0]) || 'http://localhost:5173';
   const metadata = {
     orderId: order._id.toString(),
     userId: req.user._id.toString(),
@@ -294,7 +307,8 @@ export const createCheckout = asyncHandler(async (req, res) => {
     customerEmail: order.user.email,
     lineItemName: `FoodDash · ${order.restaurant?.name || 'Order'}`,
     successUrl: `${clientUrl}/payment/success?orderId=${order._id}&session_id={CHECKOUT_SESSION_ID}`,
-    cancelUrl: `${clientUrl}/checkout?canceled=1&orderId=${order._id}`,
+    // Back / cancel on Stripe should land on "order placed" pending payment, not checkout
+    cancelUrl: `${clientUrl}/payment/pending?orderId=${order._id}&reason=canceled`,
   });
 
   let payment = await Payment.findOne({ order: order._id, status: 'pending' });
